@@ -302,11 +302,15 @@ namespace QuantLib {
             Date discountDate = model_ == DiscountCurve
                                     ? firstCoupon->accrualStartDate()
                                     : valuation_date;
-            Real fixedLegCashBPS = CashFlows::bps(
-                fixedLeg,
-                InterestRate(atmForward, dayCount, Compounded, Annual), false,
-                discountDate);
-            annuity = std::fabs(fixedLegCashBPS / basisPoint) *
+            Frequency freq = Annual;
+            if(swap.fixedSchedule().hasTenor()) {
+                freq = swap.fixedSchedule().tenor().frequency();
+            }
+            Real fixedLegCashBPS =
+                CashFlows::bps(fixedLeg,
+                        InterestRate(atmForward, dayCount, Compounded, freq),
+                        false, discountDate);
+            annuity = std::fabs(fixedLegCashBPS / basisPoint) * 
                       discountCurve_->discount(discountDate);
         } else {
             QL_FAIL("invalid (settlementType, settlementMethod) pair");

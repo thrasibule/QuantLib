@@ -240,6 +240,7 @@ namespace QuantLib {
         // swap.iborIndex() might be using a different forwarding curve
         swap.setPricingEngine(ext::shared_ptr<PricingEngine>(new
             DiscountingSwapEngine(discountCurve_, false)));
+        results_.valuationDate  = (*discountCurve_)->referenceDate();
         Rate atmForward = swap.fairRate();
 
         // Volatilities are quoted for zero-spreaded swaps.

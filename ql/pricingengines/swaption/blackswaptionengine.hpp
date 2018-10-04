@@ -246,6 +246,7 @@ namespace QuantLib {
             swap->setPricingEngine(engine);
         if (swapOis)
             swapOis->setPricingEngine(engine);
+        results_.valuationDate  = (*discountCurve_)->referenceDate();
         Rate atmForward = swap ? swap->fairRate() : swapOis->fairRate();
 
         // Volatilities are quoted for zero-spreaded swaps.

@@ -59,8 +59,8 @@ namespace QuantLib {
                                  const DayCounter& dc = Actual365Fixed(),
                                  Real displacement = 0.0,
                                  CashAnnuityModel model = DiscountCurve,
-                                 const Date settlementDate = Date(),
-                                 const Date npvDate = Date());
+                                 Date settlementDate = Date(),
+                                 Date npvDate = Date());
         BlackStyleSwaptionEngine(Handle<YieldTermStructure> discountCurve,
                                  const Handle<Quote>& vol,
                                  const DayCounter& dc = Actual365Fixed(),
@@ -71,8 +71,8 @@ namespace QuantLib {
         BlackStyleSwaptionEngine(Handle<YieldTermStructure> discountCurve,
                                  Handle<SwaptionVolatilityStructure> vol,
                                  CashAnnuityModel model = DiscountCurve,
-                                 const Date settlementDate = Date(),
-                                 const Date npvDate = Date());
+                                 Date settlementDate = Date(),
+                                 Date npvDate = Date());
         void calculate() const override;
         Handle<YieldTermStructure> termStructure() { return discountCurve_; }
         Handle<SwaptionVolatilityStructure> volatility() { return vol_; }
@@ -149,20 +149,20 @@ namespace QuantLib {
                             const DayCounter& dc = Actual365Fixed(),
                             Real displacement = 0.0,
                             CashAnnuityModel model = DiscountCurve,
-                            const Date settlementDate = Date(),
-                            const Date npvDate = Date());
+                            Date settlementDate = Date(),
+                            Date npvDate = Date());
         BlackSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                             const Handle<Quote>& vol,
                             const DayCounter& dc = Actual365Fixed(),
                             Real displacement = 0.0,
                             CashAnnuityModel model = DiscountCurve,
-                            const Date settlementDate = Date(),
-                            const Date npvDate = Date());
+                            Date settlementDate = Date(),
+                            Date npvDate = Date());
         BlackSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                             const Handle<SwaptionVolatilityStructure>& vol,
                             CashAnnuityModel model = DiscountCurve,
-                            const Date settlementDate = Date(),
-                            const Date npvDate = Date());
+                            Date settlementDate = Date(),
+                            Date npvDate = Date());
     };
 
     //! Normal Bachelier-formula swaption engine
@@ -179,19 +179,19 @@ namespace QuantLib {
                                 Volatility vol,
                                 const DayCounter& dc = Actual365Fixed(),
                                 CashAnnuityModel model = DiscountCurve,
-                                const Date settlementDate = Date(),
-                                const Date npvDate = Date());
+                                Date settlementDate = Date(),
+                                Date npvDate = Date());
         BachelierSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                                 const Handle<Quote>& vol,
                                 const DayCounter& dc = Actual365Fixed(),
                                 CashAnnuityModel model = DiscountCurve,
-                                const Date settlementDate = Date(),
-                                const Date npvDate = Date());
+                                Date settlementDate = Date(),
+                                Date npvDate = Date());
         BachelierSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                                 const Handle<SwaptionVolatilityStructure>& vol,
                                 CashAnnuityModel model = DiscountCurve,
-                                const Date settlementDate = Date(),
-                                const Date npvDate = Date());
+                                Date settlementDate = Date(),
+                                Date npvDate = Date());
     };
 
     // implementation

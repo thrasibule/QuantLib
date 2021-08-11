@@ -58,15 +58,21 @@ namespace QuantLib {
                                  Volatility vol,
                                  const DayCounter& dc = Actual365Fixed(),
                                  Real displacement = 0.0,
-                                 CashAnnuityModel model = DiscountCurve);
+                                 CashAnnuityModel model = DiscountCurve,
+                                 const Date settlementDate = Date(),
+                                 const Date npvDate = Date());
         BlackStyleSwaptionEngine(Handle<YieldTermStructure> discountCurve,
                                  const Handle<Quote>& vol,
                                  const DayCounter& dc = Actual365Fixed(),
                                  Real displacement = 0.0,
-                                 CashAnnuityModel model = DiscountCurve);
+                                 CashAnnuityModel model = DiscountCurve,
+                                 Date settlementDate = Date(),
+                                 Date npvDate = Date());
         BlackStyleSwaptionEngine(Handle<YieldTermStructure> discountCurve,
                                  Handle<SwaptionVolatilityStructure> vol,
-                                 CashAnnuityModel model = DiscountCurve);
+                                 CashAnnuityModel model = DiscountCurve,
+                                 const Date settlementDate = Date(),
+                                 const Date npvDate = Date());
         void calculate() const override;
         Handle<YieldTermStructure> termStructure() { return discountCurve_; }
         Handle<SwaptionVolatilityStructure> volatility() { return vol_; }
@@ -75,6 +81,8 @@ namespace QuantLib {
         Handle<YieldTermStructure> discountCurve_;
         Handle<SwaptionVolatilityStructure> vol_;
         CashAnnuityModel model_;
+        Date settlementDate_;
+        Date npvDate_;
     };
 
     // shifted lognormal type engine
@@ -140,15 +148,21 @@ namespace QuantLib {
                             Volatility vol,
                             const DayCounter& dc = Actual365Fixed(),
                             Real displacement = 0.0,
-                            CashAnnuityModel model = DiscountCurve);
+                            CashAnnuityModel model = DiscountCurve,
+                            const Date settlementDate = Date(),
+                            const Date npvDate = Date());
         BlackSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                             const Handle<Quote>& vol,
                             const DayCounter& dc = Actual365Fixed(),
                             Real displacement = 0.0,
-                            CashAnnuityModel model = DiscountCurve);
+                            CashAnnuityModel model = DiscountCurve,
+                            const Date settlementDate = Date(),
+                            const Date npvDate = Date());
         BlackSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                             const Handle<SwaptionVolatilityStructure>& vol,
-                            CashAnnuityModel model = DiscountCurve);
+                            CashAnnuityModel model = DiscountCurve,
+                            const Date settlementDate = Date(),
+                            const Date npvDate = Date());
     };
 
     //! Normal Bachelier-formula swaption engine
@@ -164,14 +178,20 @@ namespace QuantLib {
         BachelierSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                                 Volatility vol,
                                 const DayCounter& dc = Actual365Fixed(),
-                                CashAnnuityModel model = DiscountCurve);
+                                CashAnnuityModel model = DiscountCurve,
+                                const Date settlementDate = Date(),
+                                const Date npvDate = Date());
         BachelierSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                                 const Handle<Quote>& vol,
                                 const DayCounter& dc = Actual365Fixed(),
-                                CashAnnuityModel model = DiscountCurve);
+                                CashAnnuityModel model = DiscountCurve,
+                                const Date settlementDate = Date(),
+                                const Date npvDate = Date());
         BachelierSwaptionEngine(const Handle<YieldTermStructure>& discountCurve,
                                 const Handle<SwaptionVolatilityStructure>& vol,
-                                CashAnnuityModel model = DiscountCurve);
+                                CashAnnuityModel model = DiscountCurve,
+                                const Date settlementDate = Date(),
+                                const Date npvDate = Date());
     };
 
     // implementation
@@ -184,11 +204,14 @@ namespace QuantLib {
             Volatility vol,
             const DayCounter& dc,
             Real displacement,
-            CashAnnuityModel model)
+            CashAnnuityModel model,
+            const Date settlementDate, const Date npvDate)
         : discountCurve_(std::move(discountCurve)),
           vol_(ext::shared_ptr<SwaptionVolatilityStructure>(new ConstantSwaptionVolatility(
               0, NullCalendar(), Following, vol, dc, Spec().type, displacement))),
-          model_(model) {
+          model_(model),
+          settlementDate_(settlementDate),
+          npvDate_(npvDate) {
             registerWith(discountCurve_);
         }
 
@@ -198,11 +221,14 @@ namespace QuantLib {
             const Handle<Quote>& vol,
             const DayCounter& dc,
             Real displacement,
-            CashAnnuityModel model)
+            CashAnnuityModel model,
+            const Date settlementDate, const Date npvDate)
         : discountCurve_(std::move(discountCurve)),
           vol_(ext::shared_ptr<SwaptionVolatilityStructure>(new ConstantSwaptionVolatility(
               0, NullCalendar(), Following, vol, dc, Spec().type, displacement))),
-          model_(model) {
+          model_(model),
+          settlementDate_(settlementDate),
+          npvDate_(npvDate) {
             registerWith(discountCurve_);
             registerWith(vol_);
         }
@@ -211,8 +237,13 @@ namespace QuantLib {
         BlackStyleSwaptionEngine<Spec>::BlackStyleSwaptionEngine(
             Handle<YieldTermStructure> discountCurve,
             Handle<SwaptionVolatilityStructure> volatility,
-            CashAnnuityModel model)
-        : discountCurve_(std::move(discountCurve)), vol_(std::move(volatility)), model_(model) {
+            CashAnnuityModel model,
+            const Date settlementDate, const Date npvDate)
+        : discountCurve_(std::move(discountCurve)),
+          vol_(std::move(volatility)),
+          model_(model),
+          settlementDate_(settlementDate),
+          npvDate_(npvDate) {
             registerWith(discountCurve_);
             registerWith(vol_);
         }
@@ -238,8 +269,8 @@ namespace QuantLib {
 
         // using the discounting curve
         // swap.iborIndex() might be using a different forwarding curve
-        swap.setPricingEngine(ext::make_shared<DiscountingSwapEngine>(discountCurve_, false));
-        results_.valuationDate  = (*discountCurve_)->referenceDate();
+        swap.setPricingEngine(ext::make_shared<DiscountingSwapEngine>(discountCurve_, false, settlementDate_, npvDate_));
+        Date valuation_date = results_.valuationDate = swap.valuationDate();
         Rate atmForward = swap.fairRate();
 
         // Volatilities are quoted for zero-spreaded swaps.
@@ -270,7 +301,7 @@ namespace QuantLib {
             // to the swap start date
             Date discountDate = model_ == DiscountCurve
                                     ? firstCoupon->accrualStartDate()
-                                    : discountCurve_->referenceDate();
+                                    : valuation_date;
             Real fixedLegCashBPS = CashFlows::bps(
                 fixedLeg,
                 InterestRate(atmForward, dayCount, Compounded, Annual), false,
@@ -289,19 +320,18 @@ namespace QuantLib {
         // and a shift from vol_ we floor swapLength at 1/12 here therefore.
         swapLength = std::max(swapLength, 1.0 / 12.0);
         results_.additionalResults["swapLength"] = swapLength;
-
-        Real variance = vol_->blackVariance(exerciseDate, swapLength, strike);
+        Time exerciseTime = vol_->dayCounter().yearFraction(valuation_date, exerciseDate);
+        Real variance = vol_->blackVariance(exerciseTime, swapLength, strike);
 
         Real displacement =
             vol_->volatilityType() == ShiftedLognormal ?
-            vol_->shift(exerciseDate, swapLength) : 0.0;
+            vol_->shift(exerciseTime, swapLength) : 0.0;
 
         Real stdDev = std::sqrt(variance);
         results_.additionalResults["stdDev"] = stdDev;
         Option::Type w = (arguments_.type==Swap::Payer) ? Option::Call : Option::Put;
         results_.value = Spec().value(w, strike, atmForward, stdDev, annuity, displacement);
-        
-        Time exerciseTime = vol_->timeFromReference(exerciseDate);
+
         results_.additionalResults["vega"] = Spec().vega(
             strike, atmForward, stdDev, exerciseTime, annuity, displacement);
         results_.additionalResults["delta"] = Spec().delta(

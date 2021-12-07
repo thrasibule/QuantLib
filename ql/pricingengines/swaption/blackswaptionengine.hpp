@@ -250,6 +250,8 @@ namespace QuantLib {
 
     template<class Spec>
     void BlackStyleSwaptionEngine<Spec>::calculate() const {
+        constexpr VolatilityType vol_type = Spec::type;
+        QL_REQUIRE(vol_type == vol_->volatilityType(), "Engine requires " << vol_type << " volatility");
         static const Spread basisPoint = 1.0e-4;
 
         Date exerciseDate = arguments_.exercise->date(0);

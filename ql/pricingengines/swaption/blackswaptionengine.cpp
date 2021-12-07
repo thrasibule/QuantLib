@@ -54,11 +54,7 @@ namespace QuantLib {
                         Date settlementDate, Date npvDate)
     : detail::BlackStyleSwaptionEngine<detail::Black76Spec>(discountCurve, vol,
                                                             model,
-                                                            settlementDate, npvDate) {
-        QL_REQUIRE(vol->volatilityType() == ShiftedLognormal,
-                   "BlackSwaptionEngine requires (shifted) lognormal input "
-                   "volatility");
-    }
+                                                            settlementDate, npvDate) {}
 
 
     BachelierSwaptionEngine::BachelierSwaptionEngine(
@@ -83,9 +79,6 @@ namespace QuantLib {
         Date settlementDate, Date npvDate)
     : detail::BlackStyleSwaptionEngine<detail::BachelierSpec>(discountCurve, vol,
                                                               model,
-                                                              settlementDate, npvDate) {
-        QL_REQUIRE(vol->volatilityType() == Normal,
-                   "BachelierSwaptionEngine requires normal input volatility");
-    }
+                                                              settlementDate, npvDate) {}
 
 } // namespace QuantLib

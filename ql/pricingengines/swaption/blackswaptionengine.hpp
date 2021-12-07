@@ -251,11 +251,13 @@ namespace QuantLib {
 
     template<class Spec>
     void BlackStyleSwaptionEngine<Spec>::calculate() const {
+        constexpr VolatilityType vol_type = Spec::type;
+        QL_REQUIRE(vol_type == vol_->volatilityType(), "Engine requires " << vol_type << " volatility");
         static const Spread basisPoint = 1.0e-4;
 
         Date exerciseDate = arguments_.exercise->date(0);
 
-        // the part of the swap preceding exerciseDate should be truncated
+        // the part of the swap preceding exerciseDate should beruncated
         // to avoid taking into account unwanted cashflows
         // for the moment we add a check avoiding this situation
         auto swap = arguments_.swap;
@@ -323,7 +325,7 @@ namespace QuantLib {
                 CashFlows::bps(fixedLeg,
                         InterestRate(atmForward, dayCount, Compounded, freq),
                         false, discountDate);
-            annuity = std::fabs(fixedLegCashBPS / basisPoint) * 
+            annuity = std::fabs(fixedLegCashBPS / basisPoint) *
                       discountCurve_->discount(discountDate);
         } else {
             QL_FAIL("invalid (settlementType, settlementMethod) pair");

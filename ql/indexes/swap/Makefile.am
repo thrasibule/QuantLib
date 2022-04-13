@@ -9,7 +9,8 @@ this_include_HEADERS = \
     eurliborswap.hpp \
     gbpliborswap.hpp \
     jpyliborswap.hpp \
-    usdliborswap.hpp
+    usdliborswap.hpp \
+	usdsofrswap.hpp
 
 cpp_files = \
     chfliborswap.cpp \
@@ -17,7 +18,8 @@ cpp_files = \
     eurliborswap.cpp \
     gbpliborswap.cpp \
     jpyliborswap.cpp \
-    usdliborswap.cpp
+    usdliborswap.cpp \
+	usdsofrswap.cpp
 
 if UNITY_BUILD
 

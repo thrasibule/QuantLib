@@ -236,6 +236,7 @@ set(QL_SOURCES
     indexes/swap/gbpliborswap.cpp
     indexes/swap/jpyliborswap.cpp
     indexes/swap/usdliborswap.cpp
+    indexes/swap/usdsofrswap.cpp
     indexes/swapindex.cpp
     instrument.cpp
     instruments/asianoption.cpp

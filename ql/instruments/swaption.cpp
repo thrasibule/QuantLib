@@ -136,7 +136,8 @@ namespace QuantLib {
     : Option(ext::shared_ptr<Payoff>(), exercise), swap_(std::move(swap)),
       settlementType_(delivery), settlementMethod_(settlementMethod) {
         registerWith(swap_);
-        registerWithObservables(swap_);
+        // a swaption engine might not calculate the underlying swap
+        swap_->alwaysForwardNotifications();
     }
 
     Swaption::Swaption(ext::shared_ptr<OvernightIndexedSwap> swap,
@@ -146,9 +147,17 @@ namespace QuantLib {
      : Option(ext::shared_ptr<Payoff>(), exercise), swapOis_(std::move(swap)),
        settlementType_(delivery), settlementMethod_(settlementMethod) {
         registerWith(swapOis_);
-        registerWithObservables(swapOis_);
+        // a swaption engine might not calculate the underlying swap
+        swapOis_->alwaysForwardNotifications();
     }
 
+    void Swaption::deepUpdate() {
+        if (swap_)
+            swap_->deepUpdate();
+        if (swapOis_)
+            swapOis_->deepUpdate();
+        update();
+    }
 
     bool Swaption::isExpired() const {
         return detail::simple_event(exercise_->dates().back()).hasOccurred();

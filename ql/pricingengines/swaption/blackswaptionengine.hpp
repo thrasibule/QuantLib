@@ -347,7 +347,12 @@ namespace QuantLib {
 
         Real stdDev = std::sqrt(variance);
         results_.additionalResults["stdDev"] = stdDev;
-        Option::Type w = (arguments_.type==Swap::Payer) ? Option::Call : Option::Put;
+        Swap::Type swapType;
+        if (swap)
+            swapType = swap->type();
+        if (swapOis)
+            swapType = swapOis->type();
+        Option::Type w = (swapType==Swap::Payer) ? Option::Call : Option::Put;
         results_.value = Spec().value(w, strike, atmForward, stdDev, annuity, displacement);
 
         results_.additionalResults["vega"] = Spec().vega(

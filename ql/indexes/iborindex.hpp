@@ -78,9 +78,9 @@ namespace QuantLib {
            public, but before doing that I'd think hard whether we
            have any other way to get the same results.
         */
-        Rate forecastFixing(const Date& valueDate,
-                            const Date& endDate,
-                            Time t) const;
+        virtual Rate forecastFixing(const Date& valueDate,
+                const Date& endDate,
+                Time t) const;
         friend class IborCoupon;
     };
 

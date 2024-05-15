@@ -147,16 +147,24 @@ namespace QuantLib {
                     const Date& refPeriodEnd,
                     const DayCounter& dayCounter,
                     bool telescopicValueDates,
-                    RateAveraging::Type averagingMethod)
+                    RateAveraging::Type averagingMethod,
+                    const Period& lookback)
     : FloatingRateCoupon(paymentDate, nominal, startDate, endDate,
                          overnightIndex ? overnightIndex->fixingDays() : 0,
                          overnightIndex,
                          gearing, spread,
                          refPeriodStart, refPeriodEnd,
-                         dayCounter, false), averagingMethod_(averagingMethod) {
+                         dayCounter, false), averagingMethod_(averagingMethod), lookback_(lookback) {
 
+        Date valueStart = startDate;
+        Date valueEnd = endDate;
+        if (lookback != 0 * Days) {
+            BusinessDayConvention bdc = lookback.length() > 0 ? Preceding : Following;
+            valueStart = overnightIndex->fixingCalendar().advance(valueStart, -lookback, bdc);
+            valueEnd = overnightIndex->fixingCalendar().advance(valueEnd, -lookback, bdc);
+        }
         // value dates
-        Date tmpEndDate = endDate;
+        Date tmpEndDate = valueEnd;
 
         /* For the coupon's valuation only the first and last future valuation
            dates matter, therefore we can avoid to construct the whole series
@@ -168,16 +176,16 @@ namespace QuantLib {
 
         if (telescopicValueDates) {
             // build optimised value dates schedule: front stub goes
-            // from start date to max(evalDate,startDate) + 7bd
+            // from start date to max(evalDate,valueStart) + 7bd
             Date evalDate = Settings::instance().evaluationDate();
             tmpEndDate = overnightIndex->fixingCalendar().advance(
-                std::max(startDate, evalDate), 7, Days, Following);
-            tmpEndDate = std::min(tmpEndDate, endDate);
+                std::max(valueStart, evalDate), 7, Days, Following);
+            tmpEndDate = std::min(tmpEndDate, valueEnd);
         }
         Schedule sch =
             MakeSchedule()
-                .from(startDate)
-                // .to(endDate)
+                .from(valueStart)
+                // .to(valueEnd)
                 .to(tmpEndDate)
                 .withTenor(1 * Days)
                 .withCalendar(overnightIndex->fixingCalendar())
@@ -189,7 +197,7 @@ namespace QuantLib {
             // build optimised value dates schedule: back stub
             // contains at least two dates
             Date tmp = overnightIndex->fixingCalendar().advance(
-                endDate, -1, Days, Preceding);
+                valueEnd, -1, Days, Preceding);
             if (tmp != valueDates_.back())
                 valueDates_.push_back(tmp);
             tmp = overnightIndex->fixingCalendar().adjust(
@@ -335,6 +343,11 @@ namespace QuantLib {
         return *this;
     }
 
+    OvernightLeg& OvernightLeg::withLookback(const Period& lookback) {
+        lookback_ = lookback;
+        return *this;
+    }
+
     OvernightLeg::operator Leg() const {
 
         QL_REQUIRE(!notionals_.empty(), "no notional given");
@@ -371,7 +384,8 @@ namespace QuantLib {
                                        refStart, refEnd,
                                        paymentDayCounter_,
                                        telescopicValueDates_,
-                                       averagingMethod_)));
+                                       averagingMethod_,
+                                       lookback_)));
         }
         return cashflows;
     }

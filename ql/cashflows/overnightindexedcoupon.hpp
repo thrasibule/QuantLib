@@ -60,7 +60,8 @@ namespace QuantLib {
                     const Date& refPeriodEnd = Date(),
                     const DayCounter& dayCounter = DayCounter(),
                     bool telescopicValueDates = false,
-                    RateAveraging::Type averagingMethod = RateAveraging::Compound);
+                    RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                    const Period& lookback = 0 * Days);
         //! \name Inspectors
         //@{
         //! fixing dates for the rates to be compounded
@@ -73,6 +74,8 @@ namespace QuantLib {
         const std::vector<Date>& valueDates() const { return valueDates_; }
         //! averaging method
         const RateAveraging::Type averagingMethod() const { return averagingMethod_; }
+        //! lookback period
+        const Period& lookback() const { return lookback_; }
         //@}
         //! \name FloatingRateCoupon interface
         //@{
@@ -90,7 +93,7 @@ namespace QuantLib {
         Size n_;
         std::vector<Time> dt_;
         RateAveraging::Type averagingMethod_;
-
+        Period lookback_;
         Rate averageRate(const Date& date) const;
     };
 
@@ -110,6 +113,7 @@ namespace QuantLib {
         OvernightLeg& withSpreads(Spread spread);
         OvernightLeg& withSpreads(const std::vector<Spread>& spreads);
         OvernightLeg& withTelescopicValueDates(bool telescopicValueDates);
+        OvernightLeg& withLookback(const Period& lookback);
         OvernightLeg& withAveragingMethod(RateAveraging::Type averagingMethod);
         operator Leg() const;
       private:
@@ -123,6 +127,7 @@ namespace QuantLib {
         std::vector<Real> gearings_;
         std::vector<Spread> spreads_;
         bool telescopicValueDates_ = false;
+        Period lookback_;
         RateAveraging::Type averagingMethod_ = RateAveraging::Compound;
     };
 

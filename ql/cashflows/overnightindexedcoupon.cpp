@@ -115,8 +115,10 @@ namespace QuantLib {
                         compoundFactor *= (1.0 + fixing * span);
                     }
                 }
-
-                const Rate rate = (compoundFactor - 1.0) / coupon_->accruedPeriod(date);
+                Rate tau = coupon_->lookback() == 0 * Days
+                               ? coupon_->accruedPeriod(date)
+                               : coupon_->dayCounter().yearFraction(valueDates.front(), date);
+                const Rate rate = (compoundFactor - 1.0) / tau;
                 return coupon_->gearing() * rate + coupon_->spread();
             }
 

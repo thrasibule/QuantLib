@@ -247,7 +247,7 @@ namespace QuantLib {
         ObservableSettings::instance().disableUpdates();
         swap->setPricingEngine(engine);
         ObservableSettings::instance().enableUpdates();
-        Date valuation_date = results_.valuationDate  = swap->valuationDate();
+        results_.valuationDate = swap->valuationDate();
         Rate atmForward = swap->fairRate();
 
         // Volatilities are quoted for zero-spreaded swaps.
@@ -279,7 +279,7 @@ namespace QuantLib {
             // to the swap start date
             Date discountDate = model_ == DiscountCurve
                                     ? firstCoupon->accrualStartDate()
-                                    : valuation_date;
+                                    : discountCurve_->referenceDate();
             Frequency freq = Annual;
             const Schedule& fixedSchedule = swap->fixedSchedule();
             if (fixedSchedule.hasTenor()) {

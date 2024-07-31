@@ -281,10 +281,10 @@ namespace QuantLib {
                                     ? firstCoupon->accrualStartDate()
                                     : discountCurve_->referenceDate();
             Frequency freq = Annual;
-            const Schedule& fixedSchedule = swap->fixedSchedule();
-            if (fixedSchedule.hasTenor()) {
-                freq = fixedSchedule.tenor().frequency();
-            }
+            // const Schedule& fixedSchedule = swap->fixedSchedule();
+            // if (fixedSchedule.hasTenor()) {
+            //     freq = fixedSchedule.tenor().frequency();
+            // }
             Real fixedLegCashBPS =
                 CashFlows::bps(fixedLeg,
                         InterestRate(atmForward, dayCount, Compounded, freq),

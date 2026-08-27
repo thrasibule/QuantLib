@@ -24,6 +24,7 @@
 #ifndef quantlib_g2_process_hpp
 #define quantlib_g2_process_hpp
 
+#include <ql/methods/montecarlo/multipath.hpp>
 #include <ql/processes/forwardmeasureprocess.hpp>
 #include <ql/processes/ornsteinuhlenbeckprocess.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
@@ -31,18 +32,27 @@
 namespace QuantLib {
 
     //! %G2 stochastic process
-    /*! Simulates the two-factor G2++ process with state shifted so that
-        the two simulated components sum to the short rate, i.e. the state
-        is \f$ (z_1, z_2) = (x + \varphi(t),\, y) \f$, where \f$ x \f$ and
-        \f$ y \f$ are the underlying zero-mean OU factors and
-        \f$ \varphi(t) \f$ is the deterministic offset that fits the
-        initial term structure. As a consequence, sample paths produced by
-        a path generator built on this process satisfy
-        \f$ r(t_i) = \mathrm{state}[0]_i + \mathrm{state}[1]_i \f$ and have
-        curve-consistent expectation \f$ \varphi(t_i) \f$.
+    /*! Simulates the pair of zero-mean Ornstein-Uhlenbeck factors
+        \f$ (x, y) \f$ of the two-factor G2++ model. The fitted short rate
+        is recovered by adding the deterministic offset that matches the
+        initial term structure,
+        \f[ r(t) = x(t) + y(t) + \varphi(t), \f]
+        which is what shortRate() does; shortRatePath() applies it to a
+        whole sample path, so callers of a MultiPathGenerator built on this
+        process need not add \f$ \varphi \f$ themselves.
 
-        If an empty term-structure handle is passed, the process degenerates
-        to a pair of zero-mean OU processes (\f$ \varphi \equiv 0 \f$).
+        Keeping \f$ \varphi \f$ out of the simulated state makes
+        initialValues(), drift() and expectation() exact for any curve.
+        Were the state shifted so that its two components summed to
+        \f$ r(t) \f$ instead, drift() would need \f$ \varphi'(t) \f$ -
+        hence the slope of the initial instantaneous forward curve, which no
+        YieldTermStructure exposes analytically, and which does not exist at
+        all for the piecewise-flat forward curves in common use.
+
+        The term structure is only needed to evaluate \f$ \varphi \f$; the
+        factor dynamics do not depend on it. With an empty handle the
+        process is still a well-defined zero-mean OU pair, but phi(),
+        shortRate() and shortRatePath() then throw.
 
         \ingroup processes
     */
@@ -68,7 +78,9 @@ namespace QuantLib {
         Real eta() const;
         Real rho() const;
         const Handle<YieldTermStructure>& termStructure() const;
+        //! deterministic offset fitting the initial term structure
         Real phi(Time t) const;
+        //! short rate implied by the factor pair, \f$ x + y + \varphi(t) \f$
         Rate shortRate(Time t, Real x, Real y) const;
       private:
         Real x0_ = 0.0, y0_ = 0.0, a_, sigma_, b_, eta_, rho_;
@@ -78,10 +90,11 @@ namespace QuantLib {
     };
 
     //! %Forward %G2 stochastic process
-    /*! Forward-measure counterpart of G2Process. The simulated state is
-        again shifted so that \f$ \mathrm{state}[0] + \mathrm{state}[1] = r(t) \f$,
-        on top of the usual T-forward convexity adjustments to the drift
-        and the conditional expectation.
+    /*! Forward-measure counterpart of G2Process.
+        The simulated state is again the zero-mean factor pair, with the
+        usual T-forward convexity adjustments to the drift and to the
+        conditional expectation; shortRate() and shortRatePath() add
+        \f$ \varphi(t) \f$ as they do for G2Process.
 
         \ingroup processes
     */
@@ -100,7 +113,9 @@ namespace QuantLib {
         Matrix covariance(Time t0, const Array& x0, Time dt) const override;
         //@}
         const Handle<YieldTermStructure>& termStructure() const;
+        //! deterministic offset fitting the initial term structure
         Real phi(Time t) const;
+        //! short rate implied by the factor pair, \f$ x + y + \varphi(t) \f$
         Rate shortRate(Time t, Real x, Real y) const;
       protected:
         Real x0_ = 0.0, y0_ = 0.0, a_, sigma_, b_, eta_, rho_;
@@ -111,6 +126,62 @@ namespace QuantLib {
         Real yForwardDrift(Time t, Time T) const;
         Real Mx_T(Real s, Real t, Real T) const;
         Real My_T(Real s, Real t, Real T) const;
+    };
+
+    /*! \relates G2Process
+        Short-rate path implied by a two-factor sample path: given a
+        MultiPath of the factor pair \f$ (x, y) \f$ drawn from a generator
+        built on the process, returns the path of
+        \f$ r(t_i) = x(t_i) + y(t_i) + \varphi(t_i) \f$ on the same time
+        grid. This is the curve-consistent short-rate path; its expectation
+        over many draws is \f$ \varphi(t_i) \f$.
+
+        \note \f$ \varphi \f$ is re-evaluated on every call. When
+              converting many paths drawn on one time grid, hoisting
+              phi() onto the grid yourself is cheaper.
+    */
+    Path shortRatePath(const G2Process& process, const MultiPath& path);
+
+    /*! \relates G2ForwardProcess */
+    Path shortRatePath(const G2ForwardProcess& process, const MultiPath& path);
+
+    //! %G2 short-rate path builder caching the offset on a time grid
+    /*! Same conversion as shortRatePath(), with \f$ \varphi(t_i) \f$
+        evaluated once per grid instead of once per path. Use it when many
+        sample paths are drawn on a single time grid, as in a Monte Carlo
+        run: the term structure is then queried
+        \f$ \mathrm{grid\ size} \f$ times in total rather than
+        \f$ \mathrm{grid\ size} \times \mathrm{paths} \f$ times.
+
+        \code
+        G2ShortRatePathBuilder shortRate(process, grid);
+        for (Size n=0; n<samples; ++n) {
+            Path r = shortRate(generator.next().value);
+            ...
+        }
+        \endcode
+
+        The paths passed to operator() must have been drawn on the grid the
+        builder was constructed with; only their length is checked.
+    */
+    class G2ShortRatePathBuilder {
+      public:
+        /*! \param process either G2Process or G2ForwardProcess
+            \param grid    the grid the sample paths will be drawn on
+        */
+        template <class G2ProcessType>
+        G2ShortRatePathBuilder(const G2ProcessType& process, TimeGrid grid)
+        : grid_(std::move(grid)), offsets_(grid_.size()) {
+            for (Size i=0; i<grid_.size(); ++i)
+                offsets_[i] = process.phi(grid_[i]);
+        }
+        //! short-rate path implied by a factor-pair sample path
+        Path operator()(const MultiPath& path) const;
+        //! the cached offsets \f$ \varphi(t_i) \f$
+        const Array& offsets() const { return offsets_; }
+      private:
+        TimeGrid grid_;
+        Array offsets_;
     };
 
 }
